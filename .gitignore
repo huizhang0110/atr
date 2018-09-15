@@ -3,3 +3,6 @@ experiments/*
 network/__pycache__/*
 utils/__pycache__/*
 tools/__pycache__/*
+c_ops/build/*
+c_ops/*.so
+c_ops/__pycache__/*
