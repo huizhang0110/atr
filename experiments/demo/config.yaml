@@ -1,0 +1,13 @@
+lexicon_file: /home/zhui/project/atr/experiments/demo/en.lexicon
+log_dir: /home/zhui/project/atr/experiments/demo/log
+
+# Training setting
+train_tfrecord_file: /share/zhui/mnt/demo_20.tfrecord
+train_batch_size: 32
+optimizer: adadelta
+learning_rate: 1.0
+end_iter: 2000000
+ckpt_freq: 1000
+
+# Evaluation setting
+eval_tags_file: None

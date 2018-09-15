@@ -1,8 +1,8 @@
-experiments/*
-!experiments/demo/*
-network/__pycache__/*
-utils/__pycache__/*
-tools/__pycache__/*
+network/__pycache__/
+utils/__pycache__/
+tools/__pycache__/
+c_ops/__pycache__/
 c_ops/build/*
 c_ops/*.so
-c_ops/__pycache__/*
+/experiments/*
+!/experiments/demo
