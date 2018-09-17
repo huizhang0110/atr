@@ -43,7 +43,7 @@ def main(_):
     resnet = Res(istrain=is_training)
     x = resnet(image_placeholder)
     x = tf.squeeze(x, axis=1)
-    encoder_output, _ = bilstm("Encoder", x, hidden_units=256)
+    encoder_output, _ = bilstm("Encoder", x, hidden_units=config["encoder_lstm_hidden_units"])
     train_output, eval_output = attention_based_decoder(
         encoder_output,
         groundtruth_text_placeholder,
