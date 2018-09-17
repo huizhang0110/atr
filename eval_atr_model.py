@@ -1,62 +1,81 @@
-import cv2
-import tensorflow as tf 
-from model_aon import get_init_op, inference
 import os
-from res import Res
+import cv2
+import time
+import yaml
+import numpy as np
+import tensorflow as tf
+
+from atr.network.res import Res
+from atr.network.layers import bilstm, attention_based_decoder
+from atr.utils.label_map import LabelMap
+from atr.utils.image_utils import load_image
 
 flags = tf.app.flags
-flags.DEFINE_string('exp_dir', './model/test_huawei', '')
-flags.DEFINE_string('image_path', './168_supremacy_76394.jpg', '')
+flags.DEFINE_string('exp_dir', '/home/zhui/project/atr/experiments/huawei_en', '')
 FLAGS = flags.FLAGS
 
 
-def load_image(image_path):
-  image = cv2.imread(image_path, 1)
-  image = cv2.resize(
-    image, 
-    (100, 32),  # new_width, new_height
-  )
-  image = image[:, :, ::-1]  # From BGR to RGB format
-  print(image.shape)
-  image = image / 128.0 - 1
-  return image
-
-
 def main(_):
-    global_step = tf.Variable(0, name="global_step", trainable=False)
-    image_placeholder = tf.placeholder(shape=[None, 32, 100, 3], dtype=tf.float32)
-    ground_truth_placeholder = tf.placeholder(shape=[None, ], dtype=tf.string)
+    config_yaml = os.path.join(FLAGS.exp_dir, "config.yaml")
+    print(config_yaml)
+    assert os.path.exists(config_yaml), "Config yaml file is not exists"
+    with open(config_yaml, "r") as f:
+        config = yaml.load(f)
+    with open(config["lexicon_file"], "r") as f:
+        character_set = [x.strip("\n") for x in f.readlines()]
 
+    # Building inference network
     is_training = False
+    label_map_obj = LabelMap(character_set)
+    global_step = tf.Variable(0, name="global_step", trainable=False)
+    with tf.name_scope("Input"):
+        image_placeholder = tf.placeholder(shape=[None, 32, None, 3], dtype=tf.float32)
+        # We don't need to use this, just to build a network graph
+        ground_truth_placeholder = tf.placeholder(shape=[None, ], dtype=tf.string)
     resnet = Res(istrain=is_training)
     x = resnet(image_placeholder)
-    train_output, eval_output = inference(
-            x, ground_truth_placeholder)
+    x = tf.squeeze(x, axis=1)
+    encoder_output, _ = bilstm("Encoder", x, hidden_units=config["encoder_lstm_hidden_units"])
+    _, eval_output = attention_based_decoder(encoder_output,
+                                             ground_truth_placeholder,
+                                             label_map_obj,
+                                             maximum_iterations=200)
     eval_text = eval_output["predict_text"]
-    
+
     var_list = tf.trainable_variables()
     g_list = tf.global_variables()
     bn_moving_vars = [g for g in g_list if "moving_mean" in g.name]
     bn_moving_vars += [g for g in g_list if "moving_variance" in g.name]
     var_list += bn_moving_vars
+    var_list += [global_step]
 
     saver = tf.train.Saver(var_list)
-    latest_ckpt_file = tf.train.latest_checkpoint(FLAGS.exp_dir)
+    latest_ckpt_file = tf.train.latest_checkpoint(config["log_dir"])
     with tf.Session() as sess:
         sess.run([
             tf.local_variables_initializer(),
             tf.global_variables_initializer(),
-            tf.tables_initializer()
+            tf.tables_initializer(),
         ])
         saver.restore(sess, latest_ckpt_file)
         print("Loading weights from {} finished, step {}".format(
             latest_ckpt_file, sess.run(global_step)))
-        
-        demo_image = load_image(FLAGS.image_path).reshape([1, 32, 100, 3])
-        pred_ = sess.run(eval_text, feed_dict={
-            image_placeholder: demo_image})
 
-        print(pred_)
+        assert os.path.exists(config["eval_tags_file"]), "Evaluation tags file not exist."
+        num_total, num_correct = 0, 0
+        with open(config["eval_tags_file"]) as f:
+            for line in fo:
+                try:
+                    image_path, gt = line.split(" ", 1)
+                    image = load_image(image_path, dynamic=True).reshape([1, 32, -1, 3])
+                    pred_ = sess.run(eval_text, feed_dict={image_placeholder: image})
+                    print("{} ==>> {}".format(gt, pred_))
+                    num_total += 1
+                    num_correct += (gt == pred_)
+                except Exception as e:
+                    print(e)
+                    continue
+    print("Finished!, Word Acc: {}={}/{}".format(num_correct / num_total, num_correct, num_total))
 
 
 if __name__ == "__main__":
