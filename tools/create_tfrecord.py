@@ -25,7 +25,7 @@ def main(unused_argv):
             # groundtruth_text = line.split('_')[1]
 
             # For tags file
-            image_path, groundtruth_text = line.split(" ", 1)
+            image_path, groundtruth_text = line.strip().split(" ", 1)
             filename = '/'.join(image_path.split('/')[-2:])
 
             try:
