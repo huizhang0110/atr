@@ -13,3 +13,5 @@ ckpt_freq: 1000
 
 # Evaluation setting
 eval_tags_file: None
+pred_log_file: None
+error_log_file: None

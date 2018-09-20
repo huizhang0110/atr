@@ -4,6 +4,7 @@ import time
 import yaml
 import numpy as np
 import tensorflow as tf
+import editdistance
 
 from atr.network.res import Res
 from atr.network.layers import bilstm, attention_based_decoder
@@ -63,19 +64,23 @@ def main(_):
 
         assert os.path.exists(config["eval_tags_file"]), "Evaluation tags file not exist."
         num_total, num_correct = 0, 0
-        with open(config["eval_tags_file"]) as f:
+        ed_accuracys = []
+        with open(config["eval_tags_file"]) as fo:
             for line in fo:
                 try:
-                    image_path, gt = line.split(" ", 1)
+                    image_path, gt = line.strip().split(" ", 1)
                     image = load_image(image_path, dynamic=True).reshape([1, 32, -1, 3])
-                    pred_ = sess.run(eval_text, feed_dict={image_placeholder: image})
-                    print("{} ==>> {}".format(gt, pred_))
+                    pred_ = sess.run(eval_text, feed_dict={image_placeholder: image})[0].decode()
+                    print(gt, " ", pred_)
                     num_total += 1
                     num_correct += (gt == pred_)
+                    ed = editdistance.eval(gt, pred_)
+                    ed_accuracys.append(1 - ed / len(gt))
                 except Exception as e:
                     print(e)
                     continue
-    print("Finished!, Word Acc: {}={}/{}".format(num_correct / num_total, num_correct, num_total))
+    print("Finished!, Word Acc: {}={}/{}, ed_accuracy={}".format(
+        num_correct / num_total, num_correct, num_total, sum(ed_accuracys) / len(ed_accuracys)))
 
 
 if __name__ == "__main__":
