@@ -7,6 +7,7 @@ This project is based on [ASTER](https://github.com/bgshih/aster.git) improvemen
 - [x] ~~Basic version of Attentional Text Recognizer~~
 - [x] ~~Variable Length Support~~
 - [x] ~~Chinese Support~~
+- [x] ~~More flexible training data input pipeline to reduce the error bring by variable length~~
 - [ ] Beam Search
 - [ ] Bidirectional Decoder
 - [ ] Rectification network

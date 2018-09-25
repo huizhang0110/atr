@@ -95,8 +95,20 @@ def main(_):
     
     # Training progress
     print("Start training")
+    step_change_to_middle_data = 30 * len(dataset) / config["train_batch_size"]  # After 30 epoch, change to middle text data
+    step_change_to_long_data = 40 * len(dataset) / config["train_batch_size"]  # After 40 epoch, change to long text data
+    step_change_to_random_data = 50 * len(dataset) / config["train_batch_size"]  # After 50 epoch, range select data batch
+
     for step in range(begin_iter, config["end_iter"]):
-        images, groundtruth_text = next(dataset_iterator)
+        if step < step_change_to_middle_data:
+            images, groundtruth_text = next(dataset_iterator)
+        elif step < step_change_to_long_data:
+            images, groundtruth_text = dataset.get_middle_batch()
+        elif step < step_change_to_random_data:
+            images, groundtruth_text = dataset.get_long_batch()
+        else:
+            images, groundtruth_text = dataset.random_get_batch()
+
         train_feed_dict = {
             image_placeholder: images,
             groundtruth_text_placeholder: groundtruth_text
