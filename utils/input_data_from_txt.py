@@ -103,11 +103,11 @@ class Dataset:
 
     def get_middle_batch(self):
         start_idx = np.random.randint(len(self) // 2, len(self) - self._batch_size)
-        return _get_batch_data(start_idx)
+        return self._get_batch_data(start_idx)
 
     def get_long_batch(self):
         start_idx = np.random.randint(len(self) * 3 // 4, len(self) - self._batch_size)
-        return _get_batch_data(start_idx)
+        return self._get_batch_data(start_idx)
 
     def data_generator(self):
         while self._count < self._max_iter:

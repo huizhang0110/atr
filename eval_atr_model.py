@@ -12,7 +12,7 @@ from atr.utils.label_map import LabelMap
 from atr.utils.image_utils import load_image
 
 flags = tf.app.flags
-flags.DEFINE_string('exp_dir', '/home/zhui/project/atr/experiments/huawei_en', '')
+flags.DEFINE_string('exp_dir', '/home/zhui/project/atr/experiments/huawei_en_txt', '')
 FLAGS = flags.FLAGS
 
 

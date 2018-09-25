@@ -1,11 +1,12 @@
-lexicon_file: /home/zhui/project/atr/experiments/demo/en.lexicon
-log_dir: /home/zhui/project/atr/experiments/demo/log
+lexicon_file: /home/zhui/project/atr/experiments/huawei_en_txt/en.lexicon
+log_dir: /home/zhui/project/atr/experiments/huawei_en_txt/log
 backbone: resnet
 encoder_lstm_hidden_units: 256
 
 # Training setting
-train_tfrecord_file: /share/zhui/mnt/demo_20.tfrecord
-train_tags_file: None
+train_tfrecord_file: None
+train_tags_file: /home/zhui/huawei_data/recognition/rel_images/huawei_en_sorted.tags  # 73094
+cache_file: /home/zhui/project/atr/experiments/huawei_en_txt/cache.pkl
 train_batch_size: 32
 optimizer: adadelta
 learning_rate: 1.0
@@ -13,6 +14,6 @@ end_iter: 2000000
 ckpt_freq: 1000
 
 # Evaluation setting
-eval_tags_file: None
-pred_log_file: None
-error_log_file: None
+eval_tags_file: /share/zhui/huawei_data/val_en.tags
+pred_result_file: /home/zhui/project/atr/experiments/huawei_en_txt/result/pred.txt
+error_result_file: /home/zhui/project/atr/experiments/huawei_en_txt/result/error.txt
