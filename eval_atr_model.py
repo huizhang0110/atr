@@ -65,6 +65,8 @@ def main(_):
         assert os.path.exists(config["eval_tags_file"]), "Evaluation tags file not exist."
         num_total, num_correct = 0, 0
         ed_accuracys = []
+        error_pairs = []
+        all_pairs = []
         with open(config["eval_tags_file"]) as fo:
             for line in fo:
                 try:
@@ -73,14 +75,29 @@ def main(_):
                     pred_ = sess.run(eval_text, feed_dict={image_placeholder: image})[0].decode()
                     print(gt, " ", pred_)
                     num_total += 1
-                    num_correct += (gt == pred_)
                     ed = editdistance.eval(gt, pred_)
                     ed_accuracys.append(1 - ed / len(gt))
+
+                    all_pairs.append((image_path, gt, pred_, ed))
+                    if gt == pred_:
+                        num_correct += 1
+                    else:
+                        error_pairs.append((image_path, gt, pred_, ed))
                 except Exception as e:
                     print(e)
                     continue
     print("Finished!, Word Acc: {}={}/{}, ed_accuracy={}".format(
         num_correct / num_total, num_correct, num_total, sum(ed_accuracys) / len(ed_accuracys)))
+
+    with open(config["error_result_file"], "w") as fo:
+        for image_path, gt, pred_, ed in error_pairs:
+            fo.write("{}\t{}\t{}\t{}\n".format(
+                '/'.join(image_path.split('/')[-3:]), gt, pred_, ed))
+
+    with open(config["pred_result_file"], "w") as fo:
+        for image_path, gt, pred_, ed in all_pairs:
+            fo.write("{}\t{}\t{}\t{}\n".format(
+                '/'.join(image_path.split('/')[-3:]), gt, pred_, ed))
 
 
 if __name__ == "__main__":
