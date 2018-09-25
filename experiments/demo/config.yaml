@@ -5,6 +5,7 @@ encoder_lstm_hidden_units: 256
 
 # Training setting
 train_tfrecord_file: /share/zhui/mnt/demo_20.tfrecord
+train_tags_file: None
 train_batch_size: 32
 optimizer: adadelta
 learning_rate: 1.0

@@ -5,14 +5,15 @@ import yaml
 import numpy as np
 import tensorflow as tf 
 
-from atr.utils.input_data import get_batch_data
+# from atr.utils.input_data import get_batch_data
+from atr.utils.input_data_from_txt import Dataset
 from atr.network.res import Res
 from atr.network.layers import bilstm, attention_based_decoder 
 from atr.utils.label_map import LabelMap
 
 
 flags = tf.app.flags
-flags.DEFINE_string('exp_dir', '/home/zhui/project/atr/experiments/huawei_en', 
+flags.DEFINE_string('exp_dir', '/home/zhui/project/atr/experiments/huawei_en_txt', 
         'experiment model save directory')
 FLAGS = flags.FLAGS
 
@@ -28,9 +29,11 @@ def main(_):
         character_set = [x.strip("\n") for x in f.readlines()]
 
     # IO pipeline
-    batch_data_tensor = get_batch_data(
-            config["train_tfrecord_file"], 
-            config["train_batch_size"]) 
+    dataset = Dataset(
+            config["train_tags_file"],
+            config["cache_file"],
+            config["train_batch_size"])
+    dataset_iterator = dataset.data_generator()
 
     # Build network
     is_training = True
@@ -92,44 +95,30 @@ def main(_):
     
     # Training progress
     print("Start training")
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-    try:
-        for step in range(begin_iter, config["end_iter"]):
-            if coord.should_stop():
-                break
-            batch_dict = sess.run(batch_data_tensor)
-            images = batch_dict["images"]
-            groundtruth_text = batch_dict["groundtruth_text"]
+    for step in range(begin_iter, config["end_iter"]):
+        images, groundtruth_text = next(dataset_iterator)
+        train_feed_dict = {
+            image_placeholder: images,
+            groundtruth_text_placeholder: groundtruth_text
+        }
+        _, summary = sess.run([train_op, summary_op], feed_dict=train_feed_dict)
+        train_log_writer.add_summary(summary, step)
 
-            train_feed_dict = {
-                image_placeholder: images,
-                groundtruth_text_placeholder: groundtruth_text
-            }
-            _, summary = sess.run([train_op, summary_op], feed_dict=train_feed_dict)
-            train_log_writer.add_summary(summary, step)
+        if step % 100 == 0:
+            loss_ = sess.run(loss_tensor, train_feed_dict) 
+            train_text_ = sess.run(train_text, train_feed_dict)
+            print("Step {}, loss {}".format(step, loss_))
+            print("gts: ", groundtruth_text[:5])
+            print("train_texts: ", train_text_[:5])
+            print("Eval text: ", sess.run(eval_text, feed_dict={
+                image_placeholder: images})[:5])
+            print()
 
-            if step % 100 == 0:
-                loss_ = sess.run(loss_tensor, train_feed_dict) 
-                train_text_ = sess.run(train_text, train_feed_dict)
-                print("Step {}, loss {}".format(step, loss_))
-                print("gts: ", groundtruth_text[:5])
-                print("train_texts: ", train_text_[:5])
-                print("Eval text: ", sess.run(eval_text, feed_dict={
-                    image_placeholder: images})[:5])
-                print()
-
-            if step % config["ckpt_freq"] == 0:
-                train_saver.save(sess, 
-                                 save_path=ckpt_dir,
-                                 global_step=global_step)
-                print("Saving ckpt file, step {}".format(step))
-    
-    except tf.errors.OutOfRangeError():
-       print("Done")
-    finally:
-       coord.request_stop()
-       coord.join(threads)
+        if step % config["ckpt_freq"] == 0:
+            train_saver.save(sess, 
+                             save_path=ckpt_dir,
+                             global_step=global_step)
+            print("Saving ckpt file, step {}".format(step))
     sess.close()
 
 
