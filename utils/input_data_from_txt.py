@@ -52,7 +52,7 @@ class Dataset:
                     self._all_shapes), f)
 
         self._max_batch_id = len(self) // self._batch_size
-        self.threading_lock = Lock()
+        self._threading_lock = Lock()
         assert self._max_batch_id > 0, "Max Batch id less than 0"
         print("Initial Dataset finished!")
 
@@ -66,10 +66,10 @@ class Dataset:
             image = image.astype(np.float32)
             image = image / 128.0 - 1
 
-            self.threading_lock.acquire()
+            self._threading_lock.acquire()
             self._batch_images.append(image)
             self._batch_groundtruth_texts.append(gt)
-            self.threading_lock.release()
+            self._threading_lock.release()
 
     def _get_batch_data(self, start_idx):
         # process [batch_id, batch_id + batch_size)
@@ -99,7 +99,7 @@ class Dataset:
 
     def random_get_batch(self):
         start_idx = np.random.randint(0, len(self) - self._batch_size)
-        return _get_batch_data(start_idx)
+        return self._get_batch_data(start_idx)
 
     def get_middle_batch(self):
         start_idx = np.random.randint(len(self) // 2, len(self) - self._batch_size)
