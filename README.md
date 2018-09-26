@@ -15,4 +15,4 @@ This project is based on [ASTER](https://github.com/bgshih/aster.git) improvemen
 ## Environments && Installation
 
 1. Go to `c_ops` and run `build.sh` to build the `string_split_utf8` custom operator
-2. Add /path/to/atr to PYTHONPATH, or set this variable for every run
+2. Add /path/to/atr to `PYTHONPATH`, or set this variable for every run
