@@ -1,5 +1,3 @@
-// 使用c++实现一个tensorflow op操作(string_split_utf8)
-
 #include <algorithm>
 #include <string>
 #include <vector>
